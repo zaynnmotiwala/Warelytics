@@ -1,100 +1,108 @@
-# AI-Powered Self-Optimizing Data Warehouse
+# Warelytics 
+### AI-Powered Data Warehouse & Optimization Platform
 
-A full-stack data warehouse project with **bronze → silver → gold** ETL, a **FastAPI** backend for warehouse metrics and ML-assisted optimizations, and a **React (Vite)** dashboard for monitoring, analytics, and recommendations.
+Warelytics is a full-stack data warehouse platform designed to streamline data ingestion, transformation, monitoring, and optimization. It combines a layered ETL architecture with machine-learning-assisted analytics and a web-based operational dashboard.
 
----
+The platform uses a **Bronze → Silver → Gold** data processing model, PostgreSQL for persistent storage, FastAPI for backend services, and React for the frontend dashboard.
 
-## Table of contents
+## Key Capabilities
 
-1. [What this system does](#what-this-system-does)
-2. [Architecture](#architecture)
-3. [Prerequisites](#prerequisites)
-4. [Quick start (local development)](#quick-start-local-development)
-5. [Docker](#docker)
-6. [Dashboard configuration](#dashboard-configuration)
-7. [ETL pipeline](#etl-pipeline)
-8. [Optional tooling](#optional-tooling)
-9. [Repository layout](#repository-layout)
-10. [Troubleshooting](#troubleshooting)
+- **Layered Data Processing:** Organizes data through Bronze, Silver, and Gold warehouse layers.
+- **Intelligent Optimization:** Provides ML-assisted recommendations and warehouse performance insights.
+- **Operational Analytics:** Tracks workload metrics, storage utilization, system activity, and alerts.
+- **Interactive Dashboard:** Offers visual monitoring, analytics, and optimization workflows.
+- **Real-Time Communication:** Supports REST APIs and WebSocket-based updates.
+- **Caching and Coordination:** Uses Redis for supported caching and coordination workflows.
+- **Monitoring Integration:** Supports Prometheus and Grafana for infrastructure observability.
 
----
+## System Architecture
 
-## What this system does
+The platform consists of four primary components:
 
-- **Data warehouse layers** — Staged ingestion and transformation (bronze / silver / gold) backed by **PostgreSQL**.
-- **ML optimization API** — Endpoints for recommendations, workload analytics, storage insights, alerts, WebSocket streams, and system activity logging (`ml-optimization`).
-- **Dashboard** — Single-page app for operational views, analytics bundles, and optimization workflows (`dashboard`).
-- **Caching / coordination** — **Redis** for supported flows (see compose and service configs).
-- **Observability (optional)** — **Prometheus** and **Grafana** via compose overrides.
-
----
-
-## Architecture
+1. **Frontend:** React and Vite dashboard for monitoring and analytics.
+2. **Backend:** FastAPI services responsible for metrics, optimization, and API operations.
+3. **Data Infrastructure:** PostgreSQL for warehouse storage and Redis for caching.
+4. **ETL Engine:** Processes and transforms data across the warehouse layers.
 
 ```mermaid
-flowchart LR
-  subgraph clients [Clients]
-    UI[React Dashboard]
-  end
-  subgraph backend [Backend]
-    API[FastAPI ML API]
-  end
-  subgraph data [Data layer]
-    PG[(PostgreSQL)]
-    RD[(Redis)]
-  end
-  UI -->|REST / WebSocket| API
-  API --> PG
-  API --> RD
+flowchart TD
+    A[Data Sources] --> B[ETL Pipeline]
+    B --> C[Bronze Layer]
+    C --> D[Silver Layer]
+    D --> E[Gold Layer]
+    E --> F[PostgreSQL Warehouse]
+
+    F --> G[FastAPI Services]
+    H[Redis Cache] <--> G
+    G --> I[React Dashboard]
+    G --> J[ML Optimization Engine]
+    J --> G
+    G --> K[Prometheus / Grafana]
 ```
 
-Typical **local dev** ports:
+### Default Development Ports
 
-| Service            | URL / port                          |
-|-------------------|--------------------------------------|
-| ML API (default)  | `http://localhost:8000` — `/docs`   |
-| Dashboard (Vite) | `http://localhost:5173` (default)   |
-| PostgreSQL       | `localhost:5432`                    |
-| Redis            | `localhost:6379`                    |
+| Component | Address |
+|---|---|
+| FastAPI | `http://localhost:8000` |
+| API Documentation | `http://localhost:8000/docs` |
+| React Dashboard | `http://localhost:5173` |
+| PostgreSQL | `localhost:5432` |
+| Redis | `localhost:6379` |
 
-When using **Docker integration** (`docker-compose.integration.yml`), the ML service is often exposed on **8001** and the packaged dashboard on **3000** (nginx). Point the dashboard’s `VITE_API_BASE_URL` at the URL you actually run.
+The Docker integration configuration may expose different ports, including API gateway port `8000`, ML service port `8001`, and dashboard port `3000`.
 
----
+## Technology Stack
+
+| Area | Technologies |
+|---|---|
+| Backend | Python, FastAPI |
+| Frontend | React, Vite |
+| Database | PostgreSQL |
+| Caching | Redis |
+| Data Processing | Python ETL |
+| Machine Learning | ML optimization models |
+| Containerization | Docker, Docker Compose |
+| Monitoring | Prometheus, Grafana |
+| Workflow Orchestration | Apache Airflow (optional) |
 
 ## Prerequisites
 
-- **Docker Desktop** (or Docker Engine + Compose) — for PostgreSQL, Redis, and optional stacks.
-- **Python 3.10+** — for the ML API, ETL, and helper scripts.
-- **Node.js 18+** and **npm** — for the dashboard.
+Install the following before starting:
 
-Optional:
+- Python 3.10 or newer
+- Node.js 18 or newer
+- npm
+- Docker Desktop or Docker Engine with Compose
+- Git (recommended)
 
-- **Git** — version control.
-- **PowerShell** — if you use the Windows helper scripts in the repo root.
+PowerShell is useful for running the included Windows helper scripts.
 
----
+## Getting Started
 
-## Quick start (local development)
+### 1. Start Infrastructure Services
 
-This is the simplest path that matches the dashboard’s **default** API base (`http://localhost:8000/api/v1`).
-
-### 1. Start PostgreSQL and Redis
-
-From the repository root:
+Open a terminal in the project root and start PostgreSQL and Redis:
 
 ```bash
 docker compose up -d postgres redis
 ```
 
-Wait until Postgres is healthy (Compose prints health status, or use `pg_isready`).
+The default database configuration is:
 
-Default DB credentials (override with env vars if you change them):
+| Setting | Default |
+|---|---|
+| Database | `datawarehouse` |
+| Username | `postgres` |
+| Password | `postgres` |
+| Host | `localhost` |
+| Port | `5432` |
 
-- **User:** `postgres`
-- **Password:** `postgres`
-- **Database:** `datawarehouse`
+**Security note:** These are development defaults. Configure strong credentials through environment variables before using the system outside a local development environment.
 
-### 2. Install Python dependencies (ML API)
+### 2. Install Backend Dependencies
+
+Navigate to the ML optimization service:
 
 ```bash
 cd ml-optimization
@@ -102,22 +110,24 @@ python -m pip install -r requirements.txt
 cd ..
 ```
 
-If you use a virtual environment, create and activate it first, then run the same `pip install`.
+A Python virtual environment is recommended.
 
-### 3. Start the ML Optimization API
+### 3. Launch the Backend
 
-From the **repository root** (important — the loader resolves paths from here):
+Run the service launcher from the repository root:
 
 ```bash
 python start_services.py
 ```
 
-You should see:
+The API should become available at:
 
-- **API:** `http://localhost:8000`
-- **OpenAPI docs:** `http://localhost:8000/docs`
+- API: `http://localhost:8000`
+- Interactive documentation: `http://localhost:8000/docs`
 
-### 4. Start the dashboard
+### 4. Launch the Frontend
+
+Open another terminal:
 
 ```bash
 cd dashboard
@@ -125,105 +135,166 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (by default **http://localhost:5173**).
+Visit:
 
-### 5. Optional: align environment files
+`http://localhost:5173`
 
-- Copy `dashboard/.env.example` to `dashboard/.env` if you need a non-default API URL or WebSocket origin.
-- Copy `ml-optimization/.env.example` to `ml-optimization/.env` for ML tuning and Postgres-related options.
+### 5. Configure Environment Variables
 
----
+Environment templates are provided for the frontend and backend.
 
-## Docker
+- `dashboard/.env.example`
+- `ml-optimization/.env.example`
 
-### Base stack (database + cache)
+Copy the relevant template into a `.env` file and adjust the settings as required.
+
+## Docker Deployment
+
+NexusFlow Data provides multiple Docker Compose configurations for different deployment scenarios.
+
+### Core Infrastructure
 
 ```bash
 docker compose up -d postgres redis
 ```
 
-### Full integration stack (ML service + API gateway + dashboard image)
+### Integrated Application Stack
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.integration.yml up --build
 ```
 
-Services and ports are defined in `docker-compose.integration.yml` (for example ML service **8001**, API gateway **8000**, dashboard **3000** when using the bundled nginx image). Adjust `VITE_*` build args or your `.env` so the UI targets the correct backend.
+This configuration includes the integrated application services. Refer to the Compose files for actual service ports and environment settings.
 
-### Monitoring (Prometheus + Grafana)
+### Monitoring Stack
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ```
 
-Grafana is typically mapped to host port **3001** (see `docker-compose.monitoring.yml`).
+Grafana is typically accessible on port `3001`.
 
-### Development ETL (Airflow)
-
-Optional Airflow services are in `docker-compose.dev.yml`:
+### Development and Airflow
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-Airflow UI is mapped to **8081** on the host in that file.
+The Airflow interface is typically exposed on port `8081`.
 
----
+## Dashboard Configuration
 
-## Dashboard configuration
+The dashboard supports the following environment variables:
 
-| Variable | Purpose |
-|----------|---------|
-| `VITE_API_BASE_URL` | REST prefix for the ML API (default in code: `http://localhost:8000/api/v1`). |
-| `VITE_WS_BASE_URL` | Optional WebSocket origin if it differs from the API origin. |
-| `VITE_ANALYTICS_POLL_MS` | Optional analytics polling interval (ms). |
+| Variable | Description |
+|---|---|
+| `VITE_API_BASE_URL` | Backend REST API base URL |
+| `VITE_WS_BASE_URL` | WebSocket server origin |
+| `VITE_ANALYTICS_POLL_MS` | Analytics polling interval in milliseconds |
 
-See `dashboard/.env.example` for comments and examples.
+The default API prefix is:
 
----
+```text
+http://localhost:8000/api/v1
+```
 
-## ETL pipeline
+Check `dashboard/.env.example` for configuration details.
 
-- Main runner: `etl/scripts/run_etl.py` (Bronze → Silver → Gold).  
-- Logs append to `etl/scripts/etl_pipeline.log` when file logging is enabled.
-- Cron-style Windows runner: `etl/scripts/run_etl_cron.ps1` (see script header for Task Scheduler usage).
+## ETL Processing
 
-Ensure PostgreSQL is up and schemas/tables exist per your initialization scripts under `infrastructure/docker/postgres/init-scripts` before running heavy loads.
+The ETL engine follows a three-stage warehouse architecture.
 
----
+| Layer | Responsibility |
+|---|---|
+| Bronze | Stores ingested source data |
+| Silver | Handles cleaning and transformation |
+| Gold | Produces structured, analytics-ready datasets |
 
-## Optional tooling
+**Main execution script:**
 
-| Item | Description |
-|------|-------------|
-| `START_DASHBOARD_AND_API.ps1` | Windows: starts API gateway script path + `dashboard` dev server (review paths if your gateway entrypoint differs). |
-| `run_project.ps1` | Windows: checks Postgres, starts ML API + dashboard in separate windows. |
-| `scripts/start_dashboard.py` | Starts API + dashboard from one terminal (paths may point at `api-gateway`; prefer `start_services.py` + `npm run dev` if in doubt). |
-| `watch_etl*.ps1`, `monitor_etl*.ps1`, `quick_etl_check.ps1` | Windows helpers for ETL progress monitoring. |
+```text
+etl/scripts/run_etl.py
+```
 
----
+Additional utilities include:
 
-## Repository layout
+- `etl/scripts/run_etl_cron.ps1` — Windows scheduled execution.
+- `etl/scripts/etl_pipeline.log` — ETL execution logs, when file logging is enabled.
+- `infrastructure/docker/postgres/init-scripts/` — Database initialization scripts.
 
-| Path | Role |
-|------|------|
-| `ml-optimization/` | FastAPI app, ML models, routes, `requirements.txt`. |
-| `dashboard/` | Vite + React UI, `Dockerfile` / `nginx.conf` for production image. |
-| `api-gateway/` | Optional gateway service (used in Docker integration when built). |
-| `etl/` | Pipelines, DAGs, scripts, scheduler. |
-| `infrastructure/` | Docker configs for Postgres, Prometheus, Grafana, etc. |
-| `scripts/` | Utilities, migrations, one-off helpers. |
-| `start_services.py` | **Recommended** local entrypoint for the ML API on port **8000**. |
-| `docker-compose*.yml` | Compose stacks for core, dev, monitoring, integration. |
-| `system log/` | `system_activity.log` append target for dashboard/system events (created by the API when logging). |
+Ensure PostgreSQL and the required schemas are initialized before running the ETL pipeline.
 
----
+## Project Structure
+
+```text
+Warelytics/
+│
+├── ml-optimization/
+│   ├── api/
+│   ├── models/
+│   ├── routes/
+│   └── requirements.txt
+│
+├── dashboard/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+│
+├── api-gateway/
+│
+├── etl/
+│   ├── scripts/
+│   └── dags/
+│
+├── infrastructure/
+│   └── docker/
+│
+├── scripts/
+│
+├── start_services.py
+├── docker-compose.yml
+├── docker-compose.integration.yml
+├── docker-compose.monitoring.yml
+└── docker-compose.dev.yml
+```
+
+This is a high-level overview; the actual repository structure remains authoritative.
 
 ## Troubleshooting
 
-- **Dashboard shows API errors** — Confirm `python start_services.py` is running and that `VITE_API_BASE_URL` matches the host/port (including `/api/v1` suffix).
-- **CORS / WebSocket issues** — Check `VITE_WS_BASE_URL` and that the backend allows your dashboard origin (see ML API CORS settings in `ml-optimization/api/main.py`).
-- **Postgres connection refused** — Run `docker compose up -d postgres` and verify port **5432** is not used by another instance.
-- **Windows asyncio noise** — `start_services.py` already sets a Selector event loop policy where needed; use that script from repo root.
+**Dashboard cannot reach the API**
+
+- Confirm that the backend is running.
+- Check `VITE_API_BASE_URL`.
+- Verify that the configured API port and `/api/v1` prefix are correct.
+
+**WebSocket connection failures**
+
+- Verify `VITE_WS_BASE_URL`.
+- Check the backend CORS and WebSocket configuration.
+
+**PostgreSQL connection errors**
+
+- Confirm that the database container is running.
+- Check port `5432`.
+- Verify the database credentials and initialization scripts.
+
+**Windows event-loop issues**
+
+Use the recommended root-level launcher:
+
+```bash
+python start_services.py
+```
+
+## Development Notes
+
+- Use environment variables for application configuration.
+- Avoid committing secrets or local environment files.
+- Review Docker Compose configurations before deployment.
+- Run tests before submitting code changes.
+- Keep database initialization and migration procedures consistent.
 
 ---
+
+**Warelytics Data** — A unified platform for data engineering, warehouse analytics, and intelligent optimization.
